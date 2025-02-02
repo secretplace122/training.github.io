@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>База знаний</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <h1>База знаний</h1>
+        <div class="search-container">
+            <input type="text" id="searchInput" placeholder="Поиск по наименованию...">
+            <button onclick="search()">Найти</button>
+        </div>
+    </header>
+    <nav>
+        <a href="#home">Главная</a>
+        <a href="#equipment">Оборудование</a>
+        <a href="#tools">Инструменты</a>
+        <a href="#training">Обучение</a>
+        <a href="#fire-safety">Пожарная безопасность</a>
+        <a href="#first-aid">Первая помощь</a>
+        <a href="#testing">Тестирование</a>
+    </nav>
+
+    <!-- Главная страница -->
+    <div class="content" id="home">
+        <h2>Добро пожаловать в базу знаний</h2>
+        <p>Здесь вы найдете всю необходимую информацию для работы в нашей организации. Используйте поиск или навигацию для быстрого доступа к нужным материалам.</p>
+
+        <!-- Блоки разделов -->
+        <div class="grid-container">
+            <div class="grid-item" onclick="showSection('equipment')">
+                <img src="https://via.placeholder.com/50" alt="Оборудование">
+                <span>Оборудование</span>
+            </div>
+            <div class="grid-item" onclick="showSection('tools')">
+                <img src="https://via.placeholder.com/50" alt="Инструменты">
+                <span>Инструменты</span>
+            </div>
+            <div class="grid-item" onclick="showSection('training')">
+                <img src="https://via.placeholder.com/50" alt="Обучение">
+                <span>Обучение</span>
+            </div>
+            <div class="grid-item" onclick="showSection('fire-safety')">
+                <img src="https://via.placeholder.com/50" alt="Пожарная безопасность">
+                <span>Пожарная безопасность</span>
+            </div>
+            <div class="grid-item" onclick="showSection('first-aid')">
+                <img src="https://via.placeholder.com/50" alt="Первая помощь">
+                <span>Первая помощь</span>
+            </div>
+            <div class="grid-item" onclick="showSection('testing')">
+                <img src="https://via.placeholder.com/50" alt="Тестирование">
+                <span>Тестирование</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Оборудование -->
+    <div class="content" id="equipment" style="display:none;">
+        <button class="back-button" onclick="showSection('home')">Назад</button>
+        <h2>Оборудование</h2>
+        <div>
+            <img src="https://via.placeholder.com/600x400" alt="Оборудование">
+            <p>Описание оборудования и его особенности.</p>
+        </div>
+    </div>
+
+    <!-- Инструменты -->
+    <div class="content" id="tools" style="display:none;">
+        <button class="back-button" onclick="showSection('home')">Назад</button>
+        <h2>Инструменты</h2>
+        <div>
+            <img src="https://via.placeholder.com/600x400" alt="Инструменты">
+            <p>Описание инструментов и их применения.</p>
+        </div>
+    </div>
+
+    <!-- Обучение -->
+    <div class="content" id="training" style="display:none;">
+        <button class="back-button" onclick="showSection('home')">Назад</button>
+        <h2>Обучение</h2>
+        <div>
+            <img src="https://via.placeholder.com/600x400" alt="Обучение">
+            <p>Материалы для обучения сотрудников.</p>
+        </div>
+    </div>
+
+    <!-- Правила пожарной безопасности -->
+    <div class="content" id="fire-safety" style="display:none;">
+        <button class="back-button" onclick="showSection('home')">Назад</button>
+        <h2>Правила пожарной безопасности</h2>
+        <div>
+            <img src="https://via.placeholder.com/600x400" alt="Пожарная безопасность">
+            <p>Основные правила и инструкции по пожарной безопасности.</p>
+        </div>
+    </div>
+
+    <!-- Первая помощь на производстве -->
+    <div class="content" id="first-aid" style="display:none;">
+        <button class="back-button" onclick="showSection('home')">Назад</button>
+        <h2>Первая помощь на производстве</h2>
+        <div>
+            <img src="https://via.placeholder.com/600x400" alt="Первая помощь">
+            <p>Инструкции по оказанию первой помощи на производстве.</p>
+        </div>
+    </div>
+
+    <!-- Тестирование -->
+    <div class="content" id="testing" style="display:none;">
+        <button class="back-button" onclick="showSection('home')">Назад</button>
+        <h2>Тестирование</h2>
+        <div>
+            <img src="https://via.placeholder.com/600x400" alt="Тестирование">
+            <p>Тесты для проверки знаний сотрудников.</p>
+        </div>
+    </div>
+
+    <footer>
+        <p>&copy; 2025 База знаний. Все права защищены. </p>
+    </footer>
+
+    <script>
+        function search() {
+            const query = document.getElementById('searchInput').value.toLowerCase();
+            const sections = document.querySelectorAll('.content');
+            sections.forEach(section => {
+                const text = section.textContent.toLowerCase();
+                if (text.includes(query)) {
+                    section.style.display = 'block';
+                } else {
+                    section.style.display = 'none';
+                }
+            });
+        }
+
+        function showSection(sectionId) {
+            document.querySelectorAll('.content').forEach(section => {
+                section.style.display = 'none';
+            });
+            document.getElementById(sectionId).style.display = 'block';
+        }
+
+        document.querySelectorAll('nav a').forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                const targetId = this.getAttribute('href').substring(1);
+                showSection(targetId);
+            });
+        });
+    </script>
+</body>
+</html>
