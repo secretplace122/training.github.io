@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Карта дома с GPS</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .map-container {
+            width: 800px;
+            height: 600px;
+            border: 2px solid #333;
+            position: relative;
+            overflow: auto;
+            background: #f0f0f0;
+        }
+        .room {
+            position: absolute;
+            border: 1px solid #555;
+            background: rgba(255, 255, 255, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+        }
+        .person {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background: red;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 10;
+            box-shadow: 0 0 10px rgba(255,0,0,0.7);
+        }
+        .controls {
+            margin: 10px 0;
+        }
+        #gpsInfo {
+            margin-top: 10px;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <h1>Карта дома с геолокацией</h1>
+    <div class="controls">
+        <button id="startTracking">Включить GPS</button>
+        <button id="manualPosition">Указать вручную</button>
+    </div>
+    <div class="map-container" id="map"></div>
+    <div id="gpsInfo">Координаты: не определены</div>
+
+    <script>
+        // Размеры карты дома (в пикселях)
+        const HOUSE_WIDTH = 1000;
+        const HOUSE_HEIGHT = 800;
+
+        // ▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼
+        // ЗАМЕНИТЕ ЭТИ КООРДИНАТЫ НА РЕАЛЬНЫЕ ГРАНИЦЫ ВАШЕГО ДОМА!
+        const HOME_GPS = {
+            north: 56.22850, // Макс. широта (северный угол)
+            south: 56.22800, // Мин. широта (южный угол)
+            west: 37.01860,  // Мин. долгота (западный угол)
+            east: 37.01900   // Макс. долгота (восточный угол)
+        };
+        // ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
+
+        // План дома (настройте под ваш)
+        const houseMap = {
+            rooms: [
+                { id: 'living', name: 'Гостиная', x: 200, y: 200, width: 400, height: 300 },
+                { id: 'kitchen', name: 'Кухня', x: 200, y: 520, width: 300, height: 200 },
+                { id: 'bedroom', name: 'Спальня', x: 620, y: 200, width: 300, height: 300 }
+            ],
+            person: { x: 0, y: 0 }
+        };
+
+        // Инициализация карты
+        function initMap() {
+            const map = document.getElementById('map');
+            map.innerHTML = '';
+
+            houseMap.rooms.forEach(room => {
+                const roomEl = document.createElement('div');
+                roomEl.className = 'room';
+                roomEl.style.left = `${room.x}px`;
+                roomEl.style.top = `${room.y}px`;
+                roomEl.style.width = `${room.width}px`;
+                roomEl.style.height = `${room.height}px`;
+                roomEl.textContent = room.name;
+                map.appendChild(roomEl);
+            });
+
+            const personEl = document.createElement('div');
+            personEl.className = 'person';
+            personEl.id = 'person';
+            map.appendChild(personEl);
+        }
+
+        // Центрирование карты на человеке
+        function centerOnPerson() {
+            const map = document.getElementById('map');
+            const person = document.getElementById('person');
+            if (map && person) {
+                map.scrollTo({
+                    left: parseFloat(person.style.left) - map.clientWidth / 2,
+                    top: parseFloat(person.style.top) - map.clientHeight / 2,
+                    behavior: 'smooth'
+                });
+            }
+        }
+
+        // Установка позиции человека
+        function setPersonPosition(x, y) {
+            console.log("Установка позиции:", x, y);
+            
+            // Проверка на NaN и бесконечность
+            if (isNaN(x) || isNaN(y) || !isFinite(x) || !isFinite(y)) {
+                console.error("Некорректные координаты!");
+                return;
+            }
+
+            // Ограничение координат в пределах карты
+            const clampedX = Math.max(0, Math.min(x, HOUSE_WIDTH));
+            const clampedY = Math.max(0, Math.min(y, HOUSE_HEIGHT));
+            
+            houseMap.person.x = clampedX;
+            houseMap.person.y = clampedY;
+            
+            const personEl = document.getElementById('person');
+            if (personEl) {
+                personEl.style.left = `${clampedX}px`;
+                personEl.style.top = `${clampedY}px`;
+                centerOnPerson();
+            }
+            
+            document.getElementById('gpsInfo').textContent = 
+                `Координаты: X=${clampedX.toFixed(1)}, Y=${clampedY.toFixed(1)}`;
+        }
+
+        // Конвертация GPS → координаты дома
+        function convertGPSToHouse(lat, lng) {
+            // Проверка границ дома
+            if (HOME_GPS.north <= HOME_GPS.south || HOME_GPS.east <= HOME_GPS.west) {
+                console.error("Границы дома заданы неверно!");
+                return { x: 0, y: 0 };
+            }
+
+            // Проверка координат
+            if (isNaN(lat) || isNaN(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+                console.error("Некорректные координаты!");
+                return { x: 0, y: 0 };
+            }
+
+            // Расчет координат
+            const x = ((lng - HOME_GPS.west) / (HOME_GPS.east - HOME_GPS.west)) * HOUSE_WIDTH;
+            const y = HOUSE_HEIGHT - ((lat - HOME_GPS.south) / (HOME_GPS.north - HOME_GPS.south)) * HOUSE_HEIGHT;
+            
+            return { x, y };
+        }
+
+        // Запуск GPS-трекинга
+        function startTracking() {
+            if (navigator.geolocation) {
+                navigator.geolocation.watchPosition(
+                    (pos) => {
+                        const { latitude, longitude } = pos.coords;
+                        const { x, y } = convertGPSToHouse(latitude, longitude);
+                        setPersonPosition(x, y);
+                    },
+                    (err) => alert("Ошибка GPS: " + err.message),
+                    { enableHighAccuracy: true }
+                );
+            } else {
+                alert("Геолокация не поддерживается!");
+            }
+        }
+
+        // Ручной ввод координат (для теста)
+        function setManualPosition() {
+            const lat = parseFloat(prompt("Введите широту (например, 56.22824):"));
+            const lng = parseFloat(prompt("Введите долготу (например, 37.01878):"));
+            
+            if (!isNaN(lat) && !isNaN(lng)) {
+                const { x, y } = convertGPSToHouse(lat, lng);
+                setPersonPosition(x, y);
+            } else {
+                alert("Некорректные координаты!");
+            }
+        }
+
+        // Инициализация
+        document.getElementById('startTracking').addEventListener('click', startTracking);
+        document.getElementById('manualPosition').addEventListener('click', setManualPosition);
+        window.addEventListener('load', initMap);
+    </script>
+</body>
+</html>
